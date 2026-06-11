@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Teke Teke · Pedidos</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+  :root {
+    --bg:#0f0f0f; --surface:#1a1a1a; --surface2:#242424; --border:#2e2e2e;
+    --gold:#f0a500; --gold-dim:#f0a50018; --red:#e05c3a; --green:#3aad6e;
+    --orange:#f07230; --text:#f0ece4; --muted:#777; --radius:14px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+  header{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+  .logo{font-size:18px;font-weight:800;letter-spacing:-0.5px;color:var(--gold);}
+  .logo span{color:var(--text);font-weight:400;}
+  .sync-dot{width:8px;height:8px;border-radius:50%;background:var(--muted);display:inline-block;margin-right:6px;}
+  .sync-dot.connected{background:var(--green);}
+  .sync-label{font-size:12px;color:var(--muted);}
+  .date-badge{font-size:12px;color:var(--muted);background:var(--surface2);padding:4px 10px;border-radius:20px;border:1px solid var(--border);}
+  .tabs{display:flex;gap:4px;padding:14px 20px 0;border-bottom:1px solid var(--border);background:var(--surface);overflow-x:auto;}
+  .tab{padding:8px 14px;font-size:13px;font-weight:500;color:var(--muted);cursor:pointer;border-radius:8px 8px 0 0;border:1px solid transparent;border-bottom:none;transition:all .15s;background:none;white-space:nowrap;}
+  .tab.active{color:var(--gold);background:var(--bg);border-color:var(--border);border-bottom-color:var(--bg);}
+  main{padding:20px;max-width:960px;margin:0 auto;}
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px;}
+  .stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;text-align:center;}
+  .stat-num{font-size:26px;font-weight:800;color:var(--gold);line-height:1;}
+  .stat-label{font-size:11px;color:var(--muted);margin-top:4px;text-transform:uppercase;letter-spacing:.5px;}
+  .prod-summary{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:20px;}
+  .prod-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
+  .prod-title{font-size:13px;font-weight:700;}
+  .prod-subtitle{font-size:11px;color:var(--muted);margin-top:2px;}
+  .prod-section{margin-bottom:14px;}
+  .prod-section-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px;padding:4px 10px;border-radius:6px;display:inline-block;}
+  .fiesta-title{background:#f0a50018;color:var(--gold);}
+  .regular-title{background:#f0723018;color:var(--orange);}
+  .prod-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;}
+  .prod-item{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;}
+  .prod-item.needed{border-color:#f0a50040;background:var(--gold-dim);}
+  .prod-name{font-size:12px;color:var(--muted);flex:1;}
+  .prod-qty{font-size:20px;font-weight:800;color:var(--gold);margin-left:8px;}
+  .inventory-bar{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin-bottom:20px;}
+  .inv-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
+  .inv-title{font-size:13px;font-weight:700;}
+  .btn-edit-inv{font-size:12px;color:var(--gold);background:var(--gold-dim);border:1px solid #f0a50030;border-radius:6px;padding:4px 10px;cursor:pointer;}
+  .inv-section{margin-bottom:12px;}
+  .inv-section-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px;padding:3px 8px;border-radius:5px;display:inline-block;}
+  .inv-fiesta{background:#f0a50018;color:var(--gold);}
+  .inv-regular{background:#f0723018;color:var(--orange);}
+  .inv-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;}
+  .inv-item{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;}
+  .inv-item.low{border-color:#e05c3a50;background:#e05c3a08;}
+  .inv-item.ok{border-color:#3aad6e40;}
+  .inv-name{font-size:11px;color:var(--muted);margin-bottom:4px;}
+  .inv-count{font-size:20px;font-weight:800;}
+  .inv-count.low-num{color:var(--red);}
+  .inv-count.ok-num{color:var(--green);}
+  .btn-add{width:100%;padding:14px;background:var(--gold);color:#000;border:none;border-radius:var(--radius);font-size:15px;font-weight:700;cursor:pointer;margin-bottom:20px;transition:opacity .15s;}
+  .btn-add:hover{opacity:.88;}
+  .orders-list{display:flex;flex-direction:column;gap:12px;}
+  .order-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;}
+  .order-card.urgent{border-color:var(--red);box-shadow:0 0 0 1px #e05c3a30;}
+  .order-card.done{opacity:.45;}
+  .order-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--surface2);gap:10px;}
+  .order-client{font-weight:700;font-size:15px;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .order-time{font-size:15px;font-weight:800;color:var(--gold);white-space:nowrap;}
+  .order-time.urgent-time{color:var(--red);}
+  .order-body{padding:12px 16px;}
+  .items-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;margin-bottom:10px;}
+  .item-pill{background:var(--gold-dim);border:1px solid #f0a50028;border-radius:10px;padding:10px 12px;}
+  .item-pill .item-qty{font-size:22px;font-weight:800;color:var(--gold);line-height:1;}
+  .item-pill .item-name{font-size:11px;color:var(--muted);margin-top:3px;}
+  .order-meta{display:flex;gap:14px;font-size:12px;color:var(--muted);flex-wrap:wrap;}
+  .order-actions{display:flex;gap:8px;padding:10px 16px;border-top:1px solid var(--border);}
+  .btn-done{flex:1;padding:10px;background:#3aad6e18;color:var(--green);border:1px solid #3aad6e35;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;}
+  .btn-done:hover{background:#3aad6e30;}
+  .btn-delete{padding:10px 14px;background:#e05c3a12;color:var(--red);border:1px solid #e05c3a30;border-radius:10px;font-size:14px;cursor:pointer;}
+  .status-badge{font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;white-space:nowrap;}
+  .status-pending{background:#f0a50018;color:var(--gold);}
+  .status-done{background:#3aad6e18;color:var(--green);}
+  .status-urgent{background:#e05c3a18;color:var(--red);}
+  .empty{text-align:center;padding:60px 20px;color:var(--muted);}
+  .empty-icon{font-size:48px;margin-bottom:12px;}
+  .empty h3{font-size:16px;color:var(--text);margin-bottom:6px;}
+  .overlay{display:none;position:fixed;inset:0;background:#000b;z-index:200;align-items:center;justify-content:center;padding:20px;}
+  .overlay.open{display:flex;}
+  .modal{background:var(--surface);border:1px solid var(--border);border-radius:18px;width:100%;max-width:520px;max-height:92vh;overflow-y:auto;}
+  .modal-header{padding:18px 20px 14px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:var(--surface);z-index:1;}
+  .modal-title{font-size:16px;font-weight:700;}
+  .btn-close{background:var(--surface2);border:1px solid var(--border);color:var(--muted);width:30px;height:30px;border-radius:50%;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+  .modal-body{padding:20px;display:flex;flex-direction:column;gap:16px;}
+  label{display:block;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;}
+  input,select,textarea{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:11px 14px;font-size:14px;font-family:inherit;outline:none;transition:border-color .15s;}
+  input:focus,select:focus,textarea:focus{border-color:var(--gold);}
+  .item-row{display:grid;grid-template-columns:1fr 80px;gap:8px;align-items:center;margin-bottom:6px;}
+  .btn-add-item{background:var(--surface2);border:1px solid var(--border);color:var(--muted);padding:8px 14px;border-radius:8px;font-size:13px;cursor:pointer;width:100%;}
+  .btn-submit{width:100%;padding:14px;background:var(--gold);color:#000;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;transition:opacity .15s;}
+  .btn-submit:hover{opacity:.88;}
+  .inv-modal-section{margin-bottom:16px;}
+  .inv-modal-section-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;padding:4px 10px;border-radius:6px;display:inline-block;}
+  .inv-row{display:grid;grid-template-columns:1fr 100px;gap:10px;align-items:center;margin-bottom:8px;}
+  .inv-row-label{font-size:13px;font-weight:500;}
+  #tab-tablet .tablet-frame{background:#111;border:3px solid #333;border-radius:20px;padding:16px;max-width:720px;margin:0 auto;box-shadow:0 20px 60px #000a;}
+  .tablet-topbar{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--surface);border-radius:12px;margin-bottom:14px;border:1px solid var(--border);}
+  .tablet-logo{font-size:16px;font-weight:800;color:var(--gold);}
+  .tablet-clock{font-size:20px;font-weight:800;}
+  .tablet-summary{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:12px 16px;margin-bottom:14px;}
+  .ts-title{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;}
+  .ts-grid{display:flex;gap:8px;flex-wrap:wrap;}
+  .ts-pill{background:var(--gold-dim);border:1px solid #f0a50028;border-radius:8px;padding:6px 12px;font-size:13px;}
+  .ts-pill strong{color:var(--gold);font-weight:800;}
+  .tablet-orders{display:flex;flex-direction:column;gap:10px;}
+  .tablet-card{border-radius:14px;overflow:hidden;border:2px solid var(--border);}
+  .tablet-card.t-urgent{border-color:var(--red);}
+  .tablet-card-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--surface2);}
+  .t-client{font-size:18px;font-weight:800;}
+  .t-time{font-size:22px;font-weight:800;color:var(--gold);}
+  .t-time.t-urgent-time{color:var(--red);}
+  .tablet-card-body{padding:12px 16px;background:var(--surface);}
+  .t-items{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;}
+  .t-pill{background:var(--gold-dim);border:1px solid #f0a50030;border-radius:10px;padding:10px 14px;text-align:center;min-width:80px;}
+  .t-qty{font-size:28px;font-weight:800;color:var(--gold);line-height:1;}
+  .t-name{font-size:11px;color:var(--muted);margin-top:3px;}
+  .t-meta{font-size:13px;color:var(--muted);}
+  .tablet-card-footer{padding:10px 16px;border-top:1px solid var(--border);background:var(--surface);}
+  .t-btn-done{width:100%;padding:13px;background:#3aad6e18;color:var(--green);border:2px solid #3aad6e40;border-radius:10px;font-size:16px;font-weight:800;cursor:pointer;}
+  .t-badge{font-size:12px;font-weight:700;padding:4px 10px;border-radius:20px;}
+  .t-badge-pending{background:#f0a50018;color:var(--gold);}
+  .t-badge-urgent{background:#e05c3a18;color:var(--red);animation:pulse 1.2s infinite;}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+  .history-list{display:flex;flex-direction:column;gap:10px;}
+  .history-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px 16px;display:flex;justify-content:space-between;align-items:center;gap:10px;opacity:.75;}
+  .history-client{font-weight:600;font-size:14px;}
+  .history-detail{font-size:12px;color:var(--muted);margin-top:3px;}
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(120px);background:var(--green);color:#fff;padding:14px 24px;border-radius:50px;font-size:15px;font-weight:700;box-shadow:0 8px 32px #0008;z-index:999;transition:transform .4s cubic-bezier(.175,.885,.32,1.275);white-space:nowrap;}
+  .toast.show{transform:translateX(-50%) translateY(0);}
+  .hidden{display:none;}
+  .connecting{text-align:center;padding:40px;color:var(--muted);}
+  @media(max-width:500px){.stats{grid-template-columns:repeat(2,1fr);}.inv-grid{grid-template-columns:repeat(2,1fr);}.prod-grid{grid-template-columns:repeat(2,1fr);}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Teke Teke <span>· Pedidos</span></div>
+  <div style="display:flex;align-items:center;gap:12px;">
+    <div style="display:flex;align-items:center;">
+      <span class="sync-dot" id="syncDot"></span>
+      <span class="sync-label" id="syncLabel">Conectando...</span>
+    </div>
+    <div class="date-badge" id="dateDisplay"></div>
+  </div>
+</header>
+
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('today')">📋 Hoy</button>
+  <button class="tab" onclick="switchTab('tablet')">📱 Vista Tablet</button>
+  <button class="tab" onclick="switchTab('history')">🕐 Historial</button>
+</div>
+
+<main>
+  <div id="tab-today">
+    <div class="stats">
+      <div class="stat"><div class="stat-num" id="statPending">0</div><div class="stat-label">Pendientes</div></div>
+      <div class="stat"><div class="stat-num" id="statDone">0</div><div class="stat-label">Listos</div></div>
+      <div class="stat"><div class="stat-num" id="statPieces">0</div><div class="stat-label">Piezas hoy</div></div>
+      <div class="stat"><div class="stat-num" id="statRevenue">$0</div><div class="stat-label">Total hoy</div></div>
+    </div>
+    <div class="prod-summary" id="prodSummary" style="display:none">
+      <div class="prod-header">
+        <div><div class="prod-title">🫓 Resumen de producción del día</div><div class="prod-subtitle">Piezas necesarias según pedidos activos</div></div>
+      </div>
+      <div id="prodSummaryContent"></div>
+    </div>
+    <div class="inventory-bar">
+      <div class="inv-header">
+        <div class="inv-title">📦 Inventario disponible</div>
+        <button class="btn-edit-inv" onclick="openInvModal()">✏️ Actualizar producción</button>
+      </div>
+      <div id="invGrid"></div>
+    </div>
+    <button class="btn-add" onclick="openModal()">+ Nuevo pedido</button>
+    <div class="orders-list" id="ordersList"></div>
+  </div>
+
+  <div id="tab-tablet" class="hidden">
+    <p style="text-align:center;color:var(--muted);font-size:13px;margin-bottom:16px;">Vista en tiempo real para la tablet del local — se actualiza automáticamente</p>
+    <div class="tablet-frame">
+      <div class="tablet-topbar">
+        <div class="tablet-logo">🧀 Teke Teke</div>
+        <div class="tablet-clock" id="tabletClock"></div>
+        <div style="display:flex;align-items:center;gap:6px;"><span class="sync-dot" id="syncDot2"></span><span style="font-size:12px;color:var(--muted)" id="syncLabel2">...</span></div>
+      </div>
+      <div class="tablet-summary" id="tabletSummary"></div>
+      <div class="tablet-orders" id="tabletOrders"></div>
+    </div>
+  </div>
+
+  <div id="tab-history" class="hidden">
+    <div class="history-list" id="historyList"></div>
+  </div>
+</main>
+
+<!-- ORDER MODAL -->
+<div class="overlay" id="overlay" onclick="handleOverlayClick(event)">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title">Nuevo pedido</div><button class="btn-close" onclick="closeModal()">✕</button></div>
+    <div class="modal-body">
+      <div><label>Nombre o teléfono del cliente</label><input type="text" id="clientName" placeholder="Ej: María · 773-555-0101"></div>
+      <div><label>Hora de entrega / recogida</label><input type="time" id="orderTime"></div>
+      <div><label>Tipo de pedido</label>
+        <select id="orderType">
+          <option value="Recogida en local">📍 Recogida en local</option>
+          <option value="Delivery">🛵 Delivery</option>
+        </select>
+      </div>
+      <div><label>Productos</label><div id="itemsSection"></div><button class="btn-add-item" onclick="addItemRow()">+ Agregar producto</button></div>
+      <div><label>Precio total ($)</label><input type="number" id="orderPrice" placeholder="0.00" min="0" step="0.50"></div>
+      <div><label>Nota (opcional)</label><textarea id="orderNote" rows="2" placeholder="Ej: sin salsa, pagar al recoger..."></textarea></div>
+      <button class="btn-submit" onclick="submitOrder()">Guardar pedido</button>
+    </div>
+  </div>
+</div>
+
+<!-- INVENTORY MODAL -->
+<div class="overlay" id="invOverlay" onclick="handleInvOverlayClick(event)">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title">📦 Producción de hoy</div><button class="btn-close" onclick="closeInvModal()">✕</button></div>
+    <div class="modal-body">
+      <p style="font-size:13px;color:var(--muted)">Ingresa cuántas piezas se produjeron hoy. El sistema descuenta automáticamente con cada pedido.</p>
+      <div id="invModalContent"></div>
+      <button class="btn-submit" onclick="saveInventory()">Guardar inventario</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast">🔔 ¡Nuevo pedido!</div>
+
+<!-- FIREBASE -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getFirestore, collection, addDoc, onSnapshot, updateDoc, deleteDoc, doc, query, orderBy, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyD5UEterTHcIgnKaugQ2cuDCqQdDsr92L4",
+    authDomain: "teke-teke-f874a.firebaseapp.com",
+    projectId: "teke-teke-f874a",
+    storageBucket: "teke-teke-f874a.firebasestorage.app",
+    messagingSenderId: "133466086826",
+    appId: "1:133466086826:web:bb337d7810f86b0db29fd3"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db  = getFirestore(app);
+
+  // ── CATALOG ──
+  const CATALOG = {
+    fiesta: {
+      label: '🟠 Pasapalos / Piezas de Fiesta',
+      items: [
+        'Tequeño fiesta · Queso',
+        'Mini empanada fiesta · Carne',
+        'Mini empanada fiesta · Pollo',
+        'Mini empanada fiesta · Queso',
+        'Pastelito fiesta · Carne',
+        'Pastelito fiesta · Pollo',
+        'Pastelito fiesta · Papa con queso',
+        'Pastelito fiesta · Jamón y queso',
+        'Pastelito fiesta · Pizza',
+      ]
+    },
+    regular: {
+      label: '🔴 Piezas Regulares',
+      items: [
+        'Tequeño regular · Queso',
+        'Tequeño regular · Nutella',
+        'Tequeño regular · Bocadillo',
+        'Tequeño regular · Tequeyoyo',
+        'Empanada regular · Carne mechada',
+        'Empanada regular · Carne molida',
+        'Empanada regular · Pollo',
+        'Empanada regular · Queso',
+        'Empanada regular · Papa con queso',
+        'Empanada regular · Jamón y queso',
+        'Pastelito regular · Carne',
+        'Pastelito regular · Pollo',
+        'Pastelito regular · Queso',
+        'Pastelito regular · Papa con queso',
+        'Pastelito regular · Jamón y queso',
+        'Pastelito regular · Pizza',
+        'Pastelito regular · Granjero',
+      ]
+    }
+  };
+  const ALL_PRODUCTS = [...CATALOG.fiesta.items, ...CATALOG.regular.items];
+
+  // State
+  let orders    = [];
+  let inventory = {};
+  ALL_PRODUCTS.forEach(p => inventory[p] = 0);
+
+  // Date
+  document.getElementById('dateDisplay').textContent =
+    new Date().toLocaleDateString('es-US',{weekday:'long',month:'long',day:'numeric'});
+
+  // Today's date key
+  const todayKey = new Date().toISOString().slice(0,10);
+
+  // ── SYNC STATUS ──
+  function setConnected(ok) {
+    ['syncDot','syncDot2'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) { el.classList.toggle('connected', ok); }
+    });
+    const label = ok ? '🟢 En vivo' : '🔴 Sin conexión';
+    ['syncLabel','syncLabel2'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = ok ? 'En vivo' : 'Sin conexión';
+    });
+  }
+
+  // ── CLOCK ──
+  function updateClock() {
+    const el = document.getElementById('tabletClock');
+    if (el) el.textContent = new Date().toLocaleTimeString('es-US',{hour:'2-digit',minute:'2-digit'});
+  }
+  updateClock(); setInterval(updateClock, 1000);
+
+  // ── TOAST + SOUND ──
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.classList.add('show');
+    try {
+      const ctx = new (window.AudioContext||window.webkitAudioContext)();
+      [0,160,320].forEach(delay => {
+        const osc = ctx.createOscillator(), gain = ctx.createGain();
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.frequency.value = 880;
+        gain.gain.setValueAtTime(0.3, ctx.currentTime+delay/1000);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+delay/1000+0.2);
+        osc.start(ctx.currentTime+delay/1000);
+        osc.stop(ctx.currentTime+delay/1000+0.25);
+      });
+    } catch(e){}
+    setTimeout(() => t.classList.remove('show'), 3500);
+  }
+
+  // ── TABS ──
+  window.switchTab = function(tab) {
+    ['today','tablet','history'].forEach(t => {
+      document.getElementById('tab-'+t).classList.toggle('hidden', t !== tab);
+    });
+    document.querySelectorAll('.tab').forEach((el,i) => {
+      el.classList.toggle('active', ['today','tablet','history'][i] === tab);
+    });
+    if (tab === 'history') renderHistory();
+    if (tab === 'tablet')  renderTablet();
+  };
+
+  // ── FIRESTORE REAL-TIME LISTENER ──
+  const ordersRef = collection(db, 'orders');
+  const q = query(ordersRef, orderBy('time'));
+
+  let prevCount = 0;
+  onSnapshot(q, (snapshot) => {
+    setConnected(true);
+    orders = [];
+    snapshot.forEach(docSnap => {
+      orders.push({ firestoreId: docSnap.id, ...docSnap.data() });
+    });
+    // Filter today only
+    orders = orders.filter(o => o.date === todayKey);
+    orders.sort((a,b) => a.time.localeCompare(b.time));
+
+    const pendingNow = orders.filter(o=>!o.done).length;
+    if (pendingNow > prevCount && prevCount >= 0) {
+      showToast('🔔 ¡Nuevo pedido entrante!');
+    }
+    prevCount = pendingNow;
+
+    render();
+    if (!document.getElementById('tab-tablet').classList.contains('hidden')) renderTablet();
+  }, (err) => { setConnected(false); console.error(err); });
+
+  // ── INVENTORY (Firestore) ──
+  async function loadInventory() {
+    try {
+      const ref = doc(db, 'inventory', todayKey);
+      const snap = await getDoc(ref);
+      if (snap.exists()) inventory = snap.data();
+      renderInvGrid();
+    } catch(e) {}
+  }
+  loadInventory();
+
+  async function saveInventoryToFirestore() {
+    try {
+      await setDoc(doc(db, 'inventory', todayKey), inventory);
+    } catch(e) { console.error(e); }
+  }
+
+  // ── ORDER ACTIONS ──
+  window.submitOrder = async function() {
+    const client = document.getElementById('clientName').value.trim();
+    const time   = document.getElementById('orderTime').value;
+    const type   = document.getElementById('orderType').value;
+    const price  = parseFloat(document.getElementById('orderPrice').value)||0;
+    const note   = document.getElementById('orderNote').value.trim();
+    const items  = getItemsFromForm();
+    if (!client) { alert('Ingresa el nombre o teléfono del cliente'); return; }
+    if (!time)   { alert('Ingresa la hora de entrega'); return; }
+    if (!items.length) { alert('Agrega al menos un producto'); return; }
+    const order = { client, time, type, price, note, items, done: false, date: todayKey, createdAt: new Date().toISOString() };
+    try {
+      await addDoc(ordersRef, order);
+      deductInventory(items);
+      await saveInventoryToFirestore();
+      closeModal();
+      showToast('✅ Pedido guardado — ' + client);
+    } catch(e) { alert('Error guardando pedido. Verifica tu conexión.'); console.error(e); }
+  };
+
+  window.markDone = async function(firestoreId) {
+    try {
+      await updateDoc(doc(db, 'orders', firestoreId), { done: true, completedAt: new Date().toISOString() });
+    } catch(e) { console.error(e); }
+  };
+
+  window.deleteOrder = async function(firestoreId) {
+    if (!confirm('¿Eliminar este pedido?')) return;
+    try {
+      await deleteDoc(doc(db, 'orders', firestoreId));
+    } catch(e) { console.error(e); }
+  };
+
+  // ── INVENTORY ──
+  function deductInventory(items) {
+    items.forEach(item => {
+      if (inventory[item.name] !== undefined)
+        inventory[item.name] = Math.max(0, (inventory[item.name]||0) - item.qty);
+    });
+    renderInvGrid();
+  }
+
+  function renderInvGrid() {
+    const grid = document.getElementById('invGrid');
+    let html = '';
+    ['fiesta','regular'].forEach(cat => {
+      const cd = CATALOG[cat];
+      const cls = cat==='fiesta' ? 'inv-fiesta' : 'inv-regular';
+      html += `<div class="inv-section"><span class="inv-section-label ${cls}">${cd.label}</span><div class="inv-grid">`;
+      cd.items.forEach(p => {
+        const qty = inventory[p]||0;
+        const cardCls = qty===0?'':qty<20?'low':'ok';
+        const numCls  = qty===0?'':qty<20?'low-num':'ok-num';
+        html += `<div class="inv-item ${cardCls}"><div class="inv-name">${p}</div><div class="inv-count ${numCls}">${qty}</div></div>`;
+      });
+      html += '</div></div>';
+    });
+    grid.innerHTML = html;
+  }
+
+  window.openInvModal = function() {
+    let html = '';
+    ['fiesta','regular'].forEach(cat => {
+      const cd = CATALOG[cat];
+      const cls = cat==='fiesta'?'inv-fiesta':'inv-regular';
+      html += `<div class="inv-modal-section"><span class="inv-modal-section-title ${cls}">${cd.label}</span>`;
+      cd.items.forEach(p => {
+        const id = 'inv_'+p.replace(/[^a-zA-Z0-9]/g,'_');
+        html += `<div class="inv-row"><div class="inv-row-label">${p}</div><input type="number" id="${id}" value="${inventory[p]||0}" min="0"></div>`;
+      });
+      html += '</div>';
+    });
+    document.getElementById('invModalContent').innerHTML = html;
+    document.getElementById('invOverlay').classList.add('open');
+  };
+
+  window.saveInventory = async function() {
+    ALL_PRODUCTS.forEach(p => {
+      const id = 'inv_'+p.replace(/[^a-zA-Z0-9]/g,'_');
+      const el = document.getElementById(id);
+      if (el) inventory[p] = parseInt(el.value)||0;
+    });
+    renderInvGrid();
+    await saveInventoryToFirestore();
+    closeInvModal();
+    showToast('✅ Inventario actualizado');
+  };
+
+  window.closeInvModal = function() { document.getElementById('invOverlay').classList.remove('open'); };
+  window.handleInvOverlayClick = function(e) { if(e.target===document.getElementById('invOverlay')) closeInvModal(); };
+
+  // ── ORDER MODAL ──
+  window.openModal = function() {
+    document.getElementById('overlay').classList.add('open');
+    document.getElementById('clientName').focus();
+    const d = new Date(); d.setHours(d.getHours()+1);
+    document.getElementById('orderTime').value = d.toTimeString().slice(0,5);
+  };
+  window.closeModal = function() { document.getElementById('overlay').classList.remove('open'); resetModal(); };
+  window.handleOverlayClick = function(e) { if(e.target===document.getElementById('overlay')) closeModal(); };
+
+  function resetModal() {
+    ['clientName','orderPrice','orderNote'].forEach(id => document.getElementById(id).value='');
+    document.getElementById('orderType').value='Recogida en local';
+    document.getElementById('itemsSection').innerHTML='';
+    addItemRow();
+  }
+
+  window.addItemRow = function() {
+    const row = document.createElement('div');
+    row.className = 'item-row';
+    row.innerHTML = `
+      <select class="item-select">
+        <option value="">— Seleccionar producto —</option>
+        <optgroup label="🟠 Pasapalos / Fiesta">
+          ${CATALOG.fiesta.items.map(p=>`<option>${p}</option>`).join('')}
+        </optgroup>
+        <optgroup label="🔴 Piezas Regulares">
+          ${CATALOG.regular.items.map(p=>`<option>${p}</option>`).join('')}
+        </optgroup>
+      </select>
+      <input type="number" class="item-qty-input" placeholder="Cant." min="1">`;
+    document.getElementById('itemsSection').appendChild(row);
+  };
+
+  function getItemsFromForm() {
+    return [...document.querySelectorAll('#itemsSection .item-row')]
+      .map(row => ({ name: row.querySelector('.item-select').value, qty: parseInt(row.querySelector('.item-qty-input').value)||0 }))
+      .filter(i => i.name && i.qty > 0);
+  }
+
+  // ── HELPERS ──
+  function isUrgent(t) {
+    const [h,m]=t.split(':').map(Number);
+    const diff=(h*60+m)-(new Date().getHours()*60+new Date().getMinutes());
+    return diff>=0&&diff<=30;
+  }
+  function totalPieces(items) { return items.reduce((s,i)=>s+i.qty,0); }
+
+  function buildProdSummary() {
+    const totals = {};
+    orders.filter(o=>!o.done).forEach(o => o.items.forEach(i => { totals[i.name]=(totals[i.name]||0)+i.qty; }));
+    return totals;
+  }
+
+  // ── RENDER TODAY ──
+  function render() {
+    const pending = orders.filter(o=>!o.done).length;
+    const done    = orders.filter(o=> o.done).length;
+    const pieces  = orders.reduce((s,o)=>s+totalPieces(o.items),0);
+    const revenue = orders.reduce((s,o)=>s+o.price,0);
+    document.getElementById('statPending').textContent = pending;
+    document.getElementById('statDone').textContent    = done;
+    document.getElementById('statPieces').textContent  = pieces;
+    document.getElementById('statRevenue').textContent = '$'+revenue.toFixed(0);
+    renderInvGrid();
+    renderProdSummary();
+
+    const list = document.getElementById('ordersList');
+    if (!orders.length) {
+      list.innerHTML = `<div class="empty"><div class="empty-icon">🧀</div><h3>No hay pedidos hoy</h3><p>Toca "+ Nuevo pedido" para agregar el primero</p></div>`;
+      return;
+    }
+    list.innerHTML = orders.map(o => {
+      const urgent = isUrgent(o.time)&&!o.done;
+      const badge  = o.done?'<span class="status-badge status-done">Listo ✓</span>'
+                   :urgent?'<span class="status-badge status-urgent">¡Pronto!</span>'
+                   :'<span class="status-badge status-pending">Pendiente</span>';
+      return `<div class="order-card ${urgent?'urgent':''} ${o.done?'done':''}">
+        <div class="order-header">
+          <div class="order-client">👤 ${o.client}</div>
+          <div class="order-time ${urgent?'urgent-time':''}">🕐 ${o.time}</div>
+          ${badge}
+        </div>
+        <div class="order-body">
+          <div class="items-grid">${o.items.map(i=>`<div class="item-pill"><div class="item-qty">${i.qty}</div><div class="item-name">${i.name}</div></div>`).join('')}</div>
+          <div class="order-meta">
+            <span>📦 ${o.type}</span>
+            ${o.price?`<span>💵 $${o.price.toFixed(2)}</span>`:''}
+            <span>🫓 ${totalPieces(o.items)} piezas</span>
+            ${o.note?`<span>📝 ${o.note}</span>`:''}
+          </div>
+        </div>
+        ${!o.done?`<div class="order-actions">
+          <button class="btn-done" onclick="markDone('${o.firestoreId}')">✓ Marcar listo</button>
+          <button class="btn-delete" onclick="deleteOrder('${o.firestoreId}')">🗑</button>
+        </div>`:''}
+      </div>`;
+    }).join('');
+  }
+
+  function renderProdSummary() {
+    const totals = buildProdSummary();
+    const keys = Object.keys(totals);
+    const box = document.getElementById('prodSummary');
+    if (!keys.length) { box.style.display='none'; return; }
+    box.style.display='block';
+    const fi = CATALOG.fiesta.items.filter(p=>totals[p]);
+    const re = CATALOG.regular.items.filter(p=>totals[p]);
+    let html='';
+    if(fi.length){html+=`<div class="prod-section"><span class="prod-section-title fiesta-title">🟠 Fiesta</span><div class="prod-grid">${fi.map(p=>`<div class="prod-item needed"><div class="prod-name">${p}</div><div class="prod-qty">${totals[p]}</div></div>`).join('')}</div></div>`;}
+    if(re.length){html+=`<div class="prod-section"><span class="prod-section-title regular-title">🔴 Regulares</span><div class="prod-grid">${re.map(p=>`<div class="prod-item needed"><div class="prod-name">${p}</div><div class="prod-qty">${totals[p]}</div></div>`).join('')}</div></div>`;}
+    document.getElementById('prodSummaryContent').innerHTML = html;
+  }
+
+  // ── RENDER TABLET ──
+  function renderTablet() {
+    const active = orders.filter(o=>!o.done);
+    const totals = buildProdSummary();
+    const tKeys  = Object.keys(totals);
+    const summaryEl = document.getElementById('tabletSummary');
+    summaryEl.innerHTML = tKeys.length
+      ? `<div class="ts-title">🫓 Piezas necesarias hoy</div><div class="ts-grid">${tKeys.map(k=>`<div class="ts-pill"><strong>${totals[k]}</strong> ${k}</div>`).join('')}</div>`
+      : '<div style="font-size:13px;color:var(--muted);text-align:center">Sin pedidos pendientes</div>';
+    const container = document.getElementById('tabletOrders');
+    if (!active.length) {
+      container.innerHTML = `<div class="empty"><div class="empty-icon">✅</div><h3>Todos los pedidos listos</h3></div>`;
+      return;
+    }
+    container.innerHTML = active.map(o => {
+      const urgent = isUrgent(o.time);
+      return `<div class="tablet-card ${urgent?'t-urgent':''}">
+        <div class="tablet-card-header">
+          <div class="t-client">👤 ${o.client}</div>
+          <div class="t-time ${urgent?'t-urgent-time':''}">${o.time}</div>
+          <span class="t-badge ${urgent?'t-badge-urgent':'t-badge-pending'}">${urgent?'⚡ URGENTE':'Pendiente'}</span>
+        </div>
+        <div class="tablet-card-body">
+          <div class="t-items">${o.items.map(i=>`<div class="t-pill"><div class="t-qty">${i.qty}</div><div class="t-name">${i.name}</div></div>`).join('')}</div>
+          <div class="t-meta">📦 ${o.type}${o.price?` · 💵 $${o.price.toFixed(2)}`:''} · 🫓 ${totalPieces(o.items)} piezas${o.note?` · 📝 ${o.note}`:''}</div>
+        </div>
+        <div class="tablet-card-footer"><button class="t-btn-done" onclick="markDone('${o.firestoreId}')">✓ Marcar como listo</button></div>
+      </div>`;
+    }).join('');
+  }
+
+  // ── RENDER HISTORY ──
+  function renderHistory() {
+    const done = orders.filter(o=>o.done);
+    const list = document.getElementById('historyList');
+    if (!done.length) {
+      list.innerHTML = `<div class="empty"><div class="empty-icon">📋</div><h3>Sin pedidos completados hoy</h3></div>`;
+      return;
+    }
+    list.innerHTML = done.map(o => `
+      <div class="history-item">
+        <div><div class="history-client">👤 ${o.client}</div><div class="history-detail">${o.items.map(i=>`${i.qty} ${i.name}`).join(' · ')} · ${totalPieces(o.items)} piezas</div></div>
+        <div style="text-align:right;flex-shrink:0"><div style="font-weight:700;color:var(--green)">$${o.price.toFixed(2)}</div><div style="font-size:11px;color:var(--muted)">${o.time}</div></div>
+      </div>`).join('');
+  }
+
+  resetModal();
+</script>
+</body>
+</html>
