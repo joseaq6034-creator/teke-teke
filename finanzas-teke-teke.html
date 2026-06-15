@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Teke Teke · Finanzas</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --verde: #2d6a2d;
+    --verde-claro: #eaf3de;
+    --verde-mid: #639922;
+    --rojo: #a32d2d;
+    --rojo-claro: #fcebeb;
+    --ambar: #854f0b;
+    --ambar-claro: #faeeda;
+    --ambar-mid: #ef9f27;
+    --gris-fondo: #f7f5f0;
+    --gris-card: #ffffff;
+    --gris-borde: #e2ddd5;
+    --gris-texto: #5f5e5a;
+    --negro: #2c2c2a;
+    --acento: #c8392b;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--gris-fondo);
+    color: var(--negro);
+    min-height: 100vh;
+    padding-bottom: 80px;
+  }
+
+  /* HEADER */
+  .header {
+    background: var(--negro);
+    color: white;
+    padding: 16px 20px 12px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header-top { display: flex; align-items: center; justify-content: space-between; }
+  .header h1 { font-size: 18px; font-weight: 600; letter-spacing: -0.3px; }
+  .header-sub { font-size: 12px; opacity: 0.6; margin-top: 2px; }
+  .sync-dot { width: 8px; height: 8px; border-radius: 50%; background: #639922; display: inline-block; margin-right: 5px; }
+  .sync-dot.off { background: #e24b4a; }
+  #sync-label { font-size: 11px; opacity: 0.7; }
+
+  /* NAV TABS */
+  .nav {
+    display: flex;
+    background: #1a1a18;
+    border-bottom: 1px solid #333;
+  }
+  .nav-btn {
+    flex: 1; padding: 10px 4px; border: none; background: transparent;
+    color: rgba(255,255,255,0.45); font-size: 12px; cursor: pointer;
+    border-bottom: 2px solid transparent; transition: all 0.15s;
+  }
+  .nav-btn.active { color: white; border-bottom-color: var(--ambar-mid); }
+  .nav-btn svg { display: block; margin: 0 auto 3px; }
+
+  /* MAIN */
+  main { padding: 16px; max-width: 600px; margin: 0 auto; }
+
+  /* CARDS */
+  .card {
+    background: var(--gris-card);
+    border: 1px solid var(--gris-borde);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 12px;
+  }
+  .card-title {
+    font-size: 12px; font-weight: 600; color: var(--gris-texto);
+    text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .card-title svg { opacity: 0.6; }
+
+  /* INPUTS */
+  .fila {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 9px 0; border-bottom: 1px solid #f0ece5;
+  }
+  .fila:last-child { border-bottom: none; }
+  .fila-label { font-size: 14px; color: var(--negro); flex: 1; }
+  .fila-input {
+    display: flex; align-items: center; gap: 4px;
+  }
+  .fila-input span { font-size: 13px; color: var(--gris-texto); }
+  .fila-input input {
+    width: 100px; text-align: right; font-size: 15px; font-weight: 500;
+    padding: 5px 8px; border: 1px solid var(--gris-borde);
+    border-radius: 8px; background: var(--gris-fondo); color: var(--negro);
+    outline: none;
+  }
+  .fila-input input:focus { border-color: var(--ambar-mid); background: white; }
+  .fila-input input.count { width: 70px; }
+
+  /* MÉTRICAS */
+  .metricas { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+  .metrica {
+    background: white; border: 1px solid var(--gris-borde);
+    border-radius: 10px; padding: 12px 14px;
+  }
+  .metrica-label { font-size: 11px; color: var(--gris-texto); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.4px; }
+  .metrica-valor { font-size: 22px; font-weight: 700; color: var(--negro); }
+  .metrica-valor.verde { color: var(--verde); }
+  .metrica-valor.rojo { color: var(--rojo); }
+  .metrica-valor.ambar { color: var(--ambar); }
+  .metrica-sub { font-size: 11px; color: var(--gris-texto); margin-top: 2px; }
+
+  /* ALERTAS */
+  .alerta {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 11px 14px; border-radius: 10px; font-size: 13px;
+    margin-bottom: 10px; line-height: 1.4;
+  }
+  .alerta svg { flex-shrink: 0; margin-top: 1px; }
+  .alerta.verde { background: var(--verde-claro); color: var(--verde); }
+  .alerta.rojo { background: var(--rojo-claro); color: var(--rojo); }
+  .alerta.ambar { background: var(--ambar-claro); color: var(--ambar); }
+
+  /* BOTONES */
+  .btn-primary {
+    width: 100%; padding: 14px; background: var(--negro); color: white;
+    border: none; border-radius: 10px; font-size: 15px; font-weight: 600;
+    cursor: pointer; margin-top: 4px; transition: opacity 0.15s;
+  }
+  .btn-primary:active { opacity: 0.8; }
+  .btn-secondary {
+    width: 100%; padding: 12px; background: transparent; color: var(--negro);
+    border: 1px solid var(--gris-borde); border-radius: 10px;
+    font-size: 14px; cursor: pointer; margin-top: 8px;
+  }
+  .btn-danger {
+    width: 100%; padding: 11px; background: transparent; color: var(--rojo);
+    border: 1px solid #f7c1c1; border-radius: 10px;
+    font-size: 13px; cursor: pointer; margin-top: 6px;
+  }
+
+  /* HISTORIAL */
+  .semana-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 0; border-bottom: 1px solid #f0ece5; cursor: pointer;
+  }
+  .semana-item:last-child { border-bottom: none; }
+  .semana-info { flex: 1; }
+  .semana-fecha { font-size: 14px; font-weight: 500; color: var(--negro); }
+  .semana-detalle { font-size: 12px; color: var(--gris-texto); margin-top: 2px; }
+  .semana-ganancia { font-size: 16px; font-weight: 700; }
+  .semana-ganancia.pos { color: var(--verde); }
+  .semana-ganancia.neg { color: var(--rojo); }
+
+  /* BARRA DE PROGRESO */
+  .barra-wrap { margin: 6px 0 2px; }
+  .barra-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--gris-texto); margin-bottom: 4px; }
+  .barra-bg { background: #f0ece5; border-radius: 99px; height: 8px; overflow: hidden; }
+  .barra-fill { height: 100%; border-radius: 99px; transition: width 0.4s; }
+  .barra-fill.verde { background: var(--verde-mid); }
+  .barra-fill.ambar { background: var(--ambar-mid); }
+  .barra-fill.rojo { background: var(--rojo); }
+
+  /* VACÍO */
+  .vacio { text-align: center; padding: 40px 20px; color: var(--gris-texto); }
+  .vacio-icono { font-size: 40px; margin-bottom: 12px; }
+  .vacio p { font-size: 14px; line-height: 1.5; }
+
+  /* MODAL */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+    z-index: 200; display: flex; align-items: flex-end;
+    opacity: 0; pointer-events: none; transition: opacity 0.2s;
+  }
+  .modal-overlay.visible { opacity: 1; pointer-events: all; }
+  .modal {
+    background: white; border-radius: 20px 20px 0 0;
+    width: 100%; max-height: 80vh; overflow-y: auto;
+    padding: 20px 16px 40px; transform: translateY(100%);
+    transition: transform 0.25s; max-width: 600px; margin: 0 auto;
+  }
+  .modal-overlay.visible .modal { transform: translateY(0); }
+  .modal-titulo { font-size: 17px; font-weight: 600; margin-bottom: 16px; }
+  .modal-fila { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f0ece5; font-size: 14px; }
+  .modal-fila:last-child { border-bottom: none; }
+  .modal-fila-label { color: var(--gris-texto); }
+  .modal-fila-valor { font-weight: 500; }
+
+  /* GRÁFICO INLINE */
+  .mini-chart { display: flex; align-items: flex-end; gap: 6px; height: 60px; margin-top: 8px; }
+  .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; }
+  .bar-rect { width: 100%; border-radius: 4px 4px 0 0; min-height: 4px; }
+  .bar-lbl { font-size: 9px; color: var(--gris-texto); white-space: nowrap; }
+
+  /* SECCION */
+  .seccion { display: none; }
+  .seccion.activa { display: block; }
+
+  /* LOADING */
+  .loading { text-align: center; padding: 30px; color: var(--gris-texto); font-size: 14px; }
+  .spinner {
+    width: 24px; height: 24px; border: 2px solid var(--gris-borde);
+    border-top-color: var(--ambar-mid); border-radius: 50%;
+    animation: spin 0.7s linear infinite; margin: 0 auto 10px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* TOTALIZADOR STICKY */
+  .total-sticky {
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 50;
+    background: white; border-top: 1px solid var(--gris-borde);
+    padding: 10px 16px 20px;
+    display: flex; align-items: center; justify-content: space-between;
+    max-width: 600px; margin: 0 auto;
+  }
+  .total-sticky-label { font-size: 12px; color: var(--gris-texto); }
+  .total-sticky-valor { font-size: 20px; font-weight: 700; }
+  .total-sticky-valor.verde { color: var(--verde); }
+  .total-sticky-valor.rojo { color: var(--rojo); }
+
+  input[type=date] {
+    font-size: 14px; padding: 6px 10px; border: 1px solid var(--gris-borde);
+    border-radius: 8px; background: var(--gris-fondo); color: var(--negro);
+    outline: none; width: 100%;
+  }
+
+  .semana-selector { display: flex; gap: 8px; align-items: center; }
+  .semana-selector input { flex: 1; }
+  .semana-selector span { font-size: 13px; color: var(--gris-texto); white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <div>
+      <h1>🧾 Teke Teke · Finanzas</h1>
+      <div class="header-sub" id="fecha-display">Cargando...</div>
+    </div>
+    <div>
+      <span class="sync-dot" id="sync-dot"></span>
+      <span id="sync-label">Conectando...</span>
+    </div>
+  </div>
+</div>
+
+<div class="nav">
+  <button class="nav-btn active" onclick="irA('registro')" id="nav-registro">
+    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+    Registrar
+  </button>
+  <button class="nav-btn" onclick="irA('resumen')" id="nav-resumen">
+    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+    Resumen
+  </button>
+  <button class="nav-btn" onclick="irA('historial')" id="nav-historial">
+    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+    Historial
+  </button>
+  <button class="nav-btn" onclick="irA('config')" id="nav-config">
+    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    Config
+  </button>
+</div>
+
+<main>
+
+  <!-- SECCIÓN: REGISTRO -->
+  <div class="seccion activa" id="sec-registro">
+
+    <div class="card">
+      <div class="card-title">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        Semana a registrar
+      </div>
+      <div class="semana-selector">
+        <span>Del</span>
+        <input type="date" id="semana-inicio" onchange="actualizarGananciaLive()">
+        <span>al</span>
+        <input type="date" id="semana-fin" onchange="actualizarGananciaLive()">
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        Ventas de la semana
+      </div>
+      <div class="fila">
+        <span class="fila-label">Total ventas (Square)</span>
+        <div class="fila-input"><span>$</span><input type="number" id="v-ventas" placeholder="0" min="0" oninput="actualizarGananciaLive()"></div>
+      </div>
+      <div class="fila">
+        <span class="fila-label">Depósitos recibidos</span>
+        <div class="fila-input"><span>$</span><input type="number" id="v-depositos" placeholder="0" min="0" oninput="actualizarGananciaLive()"></div>
+      </div>
+      <div class="fila">
+        <span class="fila-label">Pedidos completados</span>
+        <div class="fila-input"><input type="number" id="v-pedidos" placeholder="0" min="0" class="count" oninput="actualizarGananciaLive()"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+        Compras de ingredientes
+      </div>
+      <div class="fila"><span class="fila-label">Queso</span><div class="fila-input"><span>$</span><input type="number" class="insumo" placeholder="0" min="0" oninput="actualizarGananciaLive()"></div></div>
+      <div class="fila"><span class="fila-label">Carne</span><div class="fila-input"><span>$</span><input type="number" class="insumo" placeholder="0" min="0" oninput="actualizarGananciaLive()"></div></div>
+      <div class="fila"><span class="fila-label">Pollo</span><div class="fila-input"><span>$</span><input type="number" class="insumo" placeholder="0" min="0" oninput="actualizarGananciaLive()"></div></div>
+      <div class="fila"><span class="fila-label">Harinas</span><div class="fila-input"><span>$</span><input type="number" class="insumo" placeholder="0" min="0" oninput="actualizarGananciaLive()"></div></div>
+      <div class="fila"><span class="fila-label">Verduras</span><div class="fila-input"><span>$</span><input type="number" class="insumo" placeholder="0" min="0" oninput="actualizarGananciaLive()"></div></div>
+      <div class="fila"><span class="fila-label">Mantequilla</span><div class="fila-input"><span>$</span><input type="number" class="insumo" placeholder="0" min="0" oninput="actualizarGananciaLive()"></div></div>
+      <div class="fila"><span class="fila-label">Mayonesa</span><div class="fila-input"><span>$</span><input type="number" class="insumo" placeholder="0" min="0" oninput="actualizarGananciaLive()"></div></div>
+      <div class="fila"><span class="fila-label">Otros ingredientes</span><div class="fila-input"><span>$</span><input type="number" id="v-insumo-otros" placeholder="0" min="0" oninput="actualizarGananciaLive()"></div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Gastos fijos de la semana
+      </div>
+      <div class="fila"><span class="fila-label">Renta (parte semanal)</span><div class="fila-input"><span>$</span><input type="number" id="gf-renta" placeholder="0" min="0" oninput="actualizarGananciaLive()"></div></div>
+      <div class="fila"><span class="fila-label">Seguro</span><div class="fila-input"><span>$</span><input type="number" id="gf-seguro" placeholder="0" min="0" oninput="actualizarGananciaLive()"></div></div>
+      <div class="fila"><span class="fila-label">Basura</span><div class="fila-input"><span>$</span><input type="number" id="gf-basura" placeholder="0" min="0" oninput="actualizarGananciaLive()"></div></div>
+      <div class="fila"><span class="fila-label">Gas</span><div class="fila-input"><span>$</span><input type="number" id="gf-gas" placeholder="0" min="0" oninput="actualizarGananciaLive()"></div></div>
+      <div class="fila"><span class="fila-label">Luz</span><div class="fila-input"><span>$</span><input type="number" id="gf-luz" placeholder="0" min="0" oninput="actualizarGananciaLive()"></div></div>
+      <div class="fila"><span class="fila-label">Contador</span><div class="fila-input"><span>$</span><input type="number" id="gf-contador" placeholder="0" min="0" oninput="actualizarGananciaLive()"></div></div>
+      <div class="fila"><span class="fila-label">Sueldo empleada</span><div class="fila-input"><span>$</span><input type="number" id="gf-empleada" placeholder="525" min="0" oninput="actualizarGananciaLive()"></div></div>
+      <div class="fila"><span class="fila-label">Sueldo José + Ari</span><div class="fila-input"><span>$</span><input type="number" id="gf-duenos" placeholder="0" min="0" oninput="actualizarGananciaLive()"></div></div>
+      <div class="fila"><span class="fila-label">Otros gastos</span><div class="fila-input"><span>$</span><input type="number" id="gf-otros" placeholder="0" min="0" oninput="actualizarGananciaLive()"></div></div>
+    </div>
+
+    <div class="card" id="notas-card">
+      <div class="card-title">📝 Notas de la semana</div>
+      <textarea id="v-notas" placeholder="Ej: semana con evento especial, faltó queso, pedido grande el sábado..." 
+        style="width:100%; border:1px solid var(--gris-borde); border-radius:8px; padding:10px; font-size:14px; background:var(--gris-fondo); color:var(--negro); resize:vertical; min-height:70px; font-family:inherit; outline:none;"></textarea>
+    </div>
+
+    <button class="btn-primary" onclick="guardarSemana()">💾 Guardar semana</button>
+
+    <!-- TOTAL STICKY -->
+    <div style="height:70px;"></div>
+  </div>
+
+  <!-- SECCIÓN: RESUMEN -->
+  <div class="seccion" id="sec-resumen">
+    <div class="loading" id="resumen-loading">
+      <div class="spinner"></div>
+      Cargando datos...
+    </div>
+    <div id="resumen-contenido" style="display:none;"></div>
+    <div class="vacio" id="resumen-vacio" style="display:none;">
+      <div class="vacio-icono">📊</div>
+      <p>Aún no hay semanas registradas.<br>Registra tu primera semana para ver el resumen.</p>
+    </div>
+  </div>
+
+  <!-- SECCIÓN: HISTORIAL -->
+  <div class="seccion" id="sec-historial">
+    <div class="loading" id="historial-loading">
+      <div class="spinner"></div>
+      Cargando historial...
+    </div>
+    <div id="historial-contenido" style="display:none;"></div>
+    <div class="vacio" id="historial-vacio" style="display:none;">
+      <div class="vacio-icono">📅</div>
+      <p>Aquí aparecerán todas las semanas registradas.</p>
+    </div>
+  </div>
+
+  <!-- SECCIÓN: CONFIGURACIÓN -->
+  <div class="seccion" id="sec-config">
+    <div class="card">
+      <div class="card-title">⚙️ Gastos fijos predeterminados</div>
+      <p style="font-size:13px; color:var(--gris-texto); margin-bottom:12px;">Configura los valores que se llenan automáticamente cada semana.</p>
+      <div class="fila"><span class="fila-label">Renta mensual</span><div class="fila-input"><span>$</span><input type="number" id="cfg-renta" placeholder="0" min="0"></div></div>
+      <div class="fila"><span class="fila-label">Seguro mensual</span><div class="fila-input"><span>$</span><input type="number" id="cfg-seguro" placeholder="0" min="0"></div></div>
+      <div class="fila"><span class="fila-label">Basura mensual</span><div class="fila-input"><span>$</span><input type="number" id="cfg-basura" placeholder="0" min="0"></div></div>
+      <div class="fila"><span class="fila-label">Gas promedio mensual</span><div class="fila-input"><span>$</span><input type="number" id="cfg-gas" placeholder="0" min="0"></div></div>
+      <div class="fila"><span class="fila-label">Luz promedio mensual</span><div class="fila-input"><span>$</span><input type="number" id="cfg-luz" placeholder="0" min="0"></div></div>
+      <div class="fila"><span class="fila-label">Contador mensual</span><div class="fila-input"><span>$</span><input type="number" id="cfg-contador" placeholder="0" min="0"></div></div>
+      <div class="fila"><span class="fila-label">Sueldo empleada/semana</span><div class="fila-input"><span>$</span><input type="number" id="cfg-empleada" placeholder="525" min="0"></div></div>
+      <div class="fila"><span class="fila-label">Sueldo José + Ari/sem</span><div class="fila-input"><span>$</span><input type="number" id="cfg-duenos" placeholder="0" min="0"></div></div>
+      <button class="btn-primary" onclick="guardarConfig()" style="margin-top:12px;">Guardar configuración</button>
+    </div>
+    <div class="card">
+      <div class="card-title">ℹ️ Acerca del sistema</div>
+      <p style="font-size:13px; color:var(--gris-texto); line-height:1.6;">
+        <strong>Teke Teke · Finanzas</strong><br>
+        Sistema de control financiero semanal.<br>
+        Datos guardados en la nube (Firebase).<br><br>
+        Desarrollado con ❤️ para Teke Teke Chicago.
+      </p>
+    </div>
+  </div>
+
+</main>
+
+<!-- TOTAL STICKY (solo en registro) -->
+<div class="total-sticky" id="total-sticky" style="display:none;">
+  <div>
+    <div class="total-sticky-label">Ganancia estimada</div>
+    <div class="total-sticky-valor" id="total-live">$0</div>
+  </div>
+  <div style="text-align:right;">
+    <div class="total-sticky-label">Margen</div>
+    <div class="total-sticky-valor" id="margen-live" style="font-size:16px;">0%</div>
+  </div>
+</div>
+
+<!-- MODAL DETALLE SEMANA -->
+<div class="modal-overlay" id="modal-overlay" onclick="cerrarModal(event)">
+  <div class="modal" id="modal-contenido"></div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
+import { getFirestore, collection, addDoc, getDocs, doc, deleteDoc, setDoc, getDoc, orderBy, query, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAXww308iq6ROD_Sogzv4FwEb8yxu9yoUg",
+  authDomain: "finanzas-teke-teke.firebaseapp.com",
+  projectId: "finanzas-teke-teke",
+  storageBucket: "finanzas-teke-teke.firebasestorage.app",
+  messagingSenderId: "985545936013",
+  appId: "1:985545936013:web:f93bf2ea0a66c2731d26c4",
+  measurementId: "G-B3BVL6ETWL"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+const semanasRef = collection(db, "semanas");
+const configRef = doc(db, "config", "gastos_fijos");
+
+let semanas = [];
+let config = {};
+
+// ── UTILIDADES ──────────────────────────────────────────
+function fmt(n) {
+  if (n === undefined || n === null || isNaN(n)) return '$0';
+  return '$' + Math.round(n).toLocaleString('en-US');
+}
+function pct(parte, total) {
+  if (!total) return 0;
+  return Math.round((parte / total) * 100);
+}
+function get(id) { return parseFloat(document.getElementById(id)?.value) || 0; }
+function sumar(sel) { return Array.from(document.querySelectorAll(sel)).reduce((a, el) => a + (parseFloat(el.value) || 0), 0); }
+
+function setFechaHoy() {
+  const hoy = new Date();
+  document.getElementById('fecha-display').textContent = hoy.toLocaleDateString('es-MX', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+  const lunes = new Date(hoy); lunes.setDate(hoy.getDate() - ((hoy.getDay() + 6) % 7));
+  const domingo = new Date(lunes); domingo.setDate(lunes.getDate() + 6);
+  document.getElementById('semana-inicio').value = lunes.toISOString().split('T')[0];
+  document.getElementById('semana-fin').value = domingo.toISOString().split('T')[0];
+}
+
+function setSyncStatus(ok) {
+  document.getElementById('sync-dot').className = 'sync-dot' + (ok ? '' : ' off');
+  document.getElementById('sync-label').textContent = ok ? 'En línea' : 'Sin conexión';
+}
+
+// ── CONFIG ──────────────────────────────────────────────
+async function cargarConfig() {
+  try {
+    const snap = await getDoc(configRef);
+    if (snap.exists()) {
+      config = snap.data();
+      document.getElementById('cfg-renta').value = config.renta_mes || '';
+      document.getElementById('cfg-seguro').value = config.seguro_mes || '';
+      document.getElementById('cfg-basura').value = config.basura_mes || '';
+      document.getElementById('cfg-gas').value = config.gas_mes || '';
+      document.getElementById('cfg-luz').value = config.luz_mes || '';
+      document.getElementById('cfg-contador').value = config.contador_mes || '';
+      document.getElementById('cfg-empleada').value = config.empleada_sem || '';
+      document.getElementById('cfg-duenos').value = config.duenos_sem || '';
+      aplicarConfigARegistro();
+    }
+    setSyncStatus(true);
+  } catch(e) { setSyncStatus(false); }
+}
+
+function aplicarConfigARegistro() {
+  const div4 = v => Math.round((v || 0) / 4);
+  if (config.renta_mes) document.getElementById('gf-renta').value = div4(config.renta_mes);
+  if (config.seguro_mes) document.getElementById('gf-seguro').value = div4(config.seguro_mes);
+  if (config.basura_mes) document.getElementById('gf-basura').value = div4(config.basura_mes);
+  if (config.gas_mes) document.getElementById('gf-gas').value = div4(config.gas_mes);
+  if (config.luz_mes) document.getElementById('gf-luz').value = div4(config.luz_mes);
+  if (config.contador_mes) document.getElementById('gf-contador').value = div4(config.contador_mes);
+  if (config.empleada_sem) document.getElementById('gf-empleada').value = config.empleada_sem;
+  if (config.duenos_sem) document.getElementById('gf-duenos').value = config.duenos_sem;
+  actualizarGananciaLive();
+}
+
+window.guardarConfig = async function() {
+  const datos = {
+    renta_mes: parseFloat(document.getElementById('cfg-renta').value) || 0,
+    seguro_mes: parseFloat(document.getElementById('cfg-seguro').value) || 0,
+    basura_mes: parseFloat(document.getElementById('cfg-basura').value) || 0,
+    gas_mes: parseFloat(document.getElementById('cfg-gas').value) || 0,
+    luz_mes: parseFloat(document.getElementById('cfg-luz').value) || 0,
+    contador_mes: parseFloat(document.getElementById('cfg-contador').value) || 0,
+    empleada_sem: parseFloat(document.getElementById('cfg-empleada').value) || 0,
+    duenos_sem: parseFloat(document.getElementById('cfg-duenos').value) || 0,
+  };
+  try {
+    await setDoc(configRef, datos);
+    config = datos;
+    alert('✅ Configuración guardada.');
+    aplicarConfigARegistro();
+  } catch(e) { alert('Error al guardar: ' + e.message); }
+};
+
+// ── GANANCIA LIVE ────────────────────────────────────────
+window.actualizarGananciaLive = function() {
+  const ventas = get('v-ventas');
+  const insumos = sumar('.insumo') + get('v-insumo-otros');
+  const fijos = get('gf-renta') + get('gf-seguro') + get('gf-basura') + get('gf-gas') + get('gf-luz') + get('gf-contador') + get('gf-empleada') + get('gf-duenos') + get('gf-otros');
+  const ganancia = ventas - insumos - fijos;
+  const margen = pct(ganancia, ventas);
+  const el = document.getElementById('total-live');
+  const mel = document.getElementById('margen-live');
+  el.textContent = fmt(ganancia);
+  el.className = 'total-sticky-valor ' + (ganancia >= 0 ? 'verde' : 'rojo');
+  mel.textContent = margen + '%';
+  mel.className = 'total-sticky-valor ' + (margen >= 20 ? 'verde' : margen >= 10 ? 'ambar' : 'rojo');
+  document.getElementById('total-sticky').style.display = 'flex';
+};
+
+// ── GUARDAR SEMANA ───────────────────────────────────────
+window.guardarSemana = async function() {
+  const inicio = document.getElementById('semana-inicio').value;
+  const fin = document.getElementById('semana-fin').value;
+  if (!inicio || !fin) { alert('Selecciona las fechas de la semana.'); return; }
+  const ventas = get('v-ventas');
+  if (!ventas) { alert('Ingresa el total de ventas.'); return; }
+
+  const insumos = {
+    queso: parseFloat(document.querySelectorAll('.insumo')[0].value) || 0,
+    carne: parseFloat(document.querySelectorAll('.insumo')[1].value) || 0,
+    pollo: parseFloat(document.querySelectorAll('.insumo')[2].value) || 0,
+    harinas: parseFloat(document.querySelectorAll('.insumo')[3].value) || 0,
+    verduras: parseFloat(document.querySelectorAll('.insumo')[4].value) || 0,
+    mantequilla: parseFloat(document.querySelectorAll('.insumo')[5].value) || 0,
+    mayonesa: parseFloat(document.querySelectorAll('.insumo')[6].value) || 0,
+    otros: get('v-insumo-otros'),
+  };
+  const totalInsumos = Object.values(insumos).reduce((a, b) => a + b, 0);
+
+  const fijos = {
+    renta: get('gf-renta'),
+    seguro: get('gf-seguro'),
+    basura: get('gf-basura'),
+    gas: get('gf-gas'),
+    luz: get('gf-luz'),
+    contador: get('gf-contador'),
+    empleada: get('gf-empleada'),
+    duenos: get('gf-duenos'),
+    otros: get('gf-otros'),
+  };
+  const totalFijos = Object.values(fijos).reduce((a, b) => a + b, 0);
+  const totalGastos = totalInsumos + totalFijos;
+  const ganancia = ventas - totalGastos;
+  const margen = pct(ganancia, ventas);
+
+  const datos = {
+    semana_inicio: inicio,
+    semana_fin: fin,
+    ventas,
+    depositos: get('v-depositos'),
+    pedidos: parseInt(document.getElementById('v-pedidos').value) || 0,
+    insumos,
+    totalInsumos,
+    fijos,
+    totalFijos,
+    totalGastos,
+    ganancia,
+    margen,
+    notas: document.getElementById('v-notas').value,
+    createdAt: serverTimestamp(),
+  };
+
+  try {
+    await addDoc(semanasRef, datos);
+    alert('✅ Semana guardada correctamente.');
+    limpiarRegistro();
+    await cargarSemanas();
+    irA('resumen');
+  } catch(e) { alert('Error al guardar: ' + e.message); }
+};
+
+function limpiarRegistro() {
+  document.querySelectorAll('#sec-registro input[type=number]').forEach(el => el.value = '');
+  document.getElementById('v-notas').value = '';
+  setFechaHoy();
+  aplicarConfigARegistro();
+  document.getElementById('total-sticky').style.display = 'none';
+}
+
+// ── CARGAR SEMANAS ───────────────────────────────────────
+async function cargarSemanas() {
+  try {
+    const q = query(semanasRef, orderBy('createdAt', 'desc'));
+    const snap = await getDocs(q);
+    semanas = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    setSyncStatus(true);
+    renderResumen();
+    renderHistorial();
+  } catch(e) {
+    setSyncStatus(false);
+  }
+}
+
+// ── RESUMEN ──────────────────────────────────────────────
+function renderResumen() {
+  document.getElementById('resumen-loading').style.display = 'none';
+  if (!semanas.length) {
+    document.getElementById('resumen-vacio').style.display = 'block';
+    document.getElementById('resumen-contenido').style.display = 'none';
+    return;
+  }
+  document.getElementById('resumen-vacio').style.display = 'none';
+  document.getElementById('resumen-contenido').style.display = 'block';
+
+  const ultima = semanas[0];
+  const total4 = semanas.slice(0, 4);
+  const promedioVentas = total4.reduce((a, s) => a + s.ventas, 0) / total4.length;
+  const promedioGanancia = total4.reduce((a, s) => a + s.ganancia, 0) / total4.length;
+  const pctInsumos = pct(ultima.totalInsumos, ultima.ventas);
+  const pctFijos = pct(ultima.totalFijos, ultima.ventas);
+
+  const alertas = [];
+  if (ultima.margen >= 30) alertas.push({ tipo:'verde', txt: `Excelente semana — margen del ${ultima.margen}%.` });
+  else if (ultima.margen >= 15) alertas.push({ tipo:'ambar', txt: `Margen del ${ultima.margen}%. Hay espacio para mejorar.` });
+  else alertas.push({ tipo:'rojo', txt: `Margen del ${ultima.margen}% — semana ajustada. Revisa costos.` });
+  if (pctInsumos > 40) alertas.push({ tipo:'ambar', txt: `Ingredientes representan el ${pctInsumos}% de ventas — considera revisar precios.` });
+  if (ultima.ventas > promedioVentas * 1.1) alertas.push({ tipo:'verde', txt: `Ventas ${Math.round(((ultima.ventas/promedioVentas)-1)*100)}% por encima del promedio reciente.` });
+
+  const miniBarras = total4.map(s => {
+    const max = Math.max(...total4.map(x => x.ganancia));
+    const h = max > 0 ? Math.max(4, Math.round((s.ganancia / max) * 50)) : 4;
+    const color = s.ganancia >= 0 ? 'var(--verde-mid)' : 'var(--rojo)';
+    const label = s.semana_inicio ? s.semana_inicio.slice(5) : '—';
+    return `<div class="bar-col"><div class="bar-rect" style="height:${h}px;background:${color};"></div><div class="bar-lbl">${label}</div></div>`;
+  }).reverse().join('');
+
+  document.getElementById('resumen-contenido').innerHTML = `
+    <div style="font-size:13px; color:var(--gris-texto); margin-bottom:8px;">Última semana: <strong style="color:var(--negro);">${ultima.semana_inicio} → ${ultima.semana_fin}</strong></div>
+
+    <div class="metricas">
+      <div class="metrica">
+        <div class="metrica-label">Ventas</div>
+        <div class="metrica-valor">${fmt(ultima.ventas)}</div>
+        <div class="metrica-sub">${ultima.pedidos} pedidos</div>
+      </div>
+      <div class="metrica">
+        <div class="metrica-label">Ganancia neta</div>
+        <div class="metrica-valor ${ultima.ganancia >= 0 ? 'verde' : 'rojo'}">${fmt(ultima.ganancia)}</div>
+        <div class="metrica-sub">Margen ${ultima.margen}%</div>
+      </div>
+      <div class="metrica">
+        <div class="metrica-label">Ingredientes</div>
+        <div class="metrica-valor ambar">${fmt(ultima.totalInsumos)}</div>
+        <div class="metrica-sub">${pctInsumos}% de ventas</div>
+      </div>
+      <div class="metrica">
+        <div class="metrica-label">Gastos fijos</div>
+        <div class="metrica-valor">${fmt(ultima.totalFijos)}</div>
+        <div class="metrica-sub">${pctFijos}% de ventas</div>
+      </div>
+    </div>
+
+    ${alertas.map(a => `<div class="alerta ${a.tipo}"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>${a.txt}</div>`).join('')}
+
+    <div class="card">
+      <div class="card-title">📈 Distribución de ventas</div>
+      <div class="barra-wrap">
+        <div class="barra-label"><span>Ingredientes</span><span>${fmt(ultima.totalInsumos)} (${pctInsumos}%)</span></div>
+        <div class="barra-bg"><div class="barra-fill ambar" style="width:${Math.min(pctInsumos,100)}%"></div></div>
+      </div>
+      <div class="barra-wrap">
+        <div class="barra-label"><span>Gastos fijos</span><span>${fmt(ultima.totalFijos)} (${pctFijos}%)</span></div>
+        <div class="barra-bg"><div class="barra-fill" style="width:${Math.min(pctFijos,100)}%;background:#378add;"></div></div>
+      </div>
+      <div class="barra-wrap">
+        <div class="barra-label"><span>Ganancia</span><span>${fmt(ultima.ganancia)} (${ultima.margen}%)</span></div>
+        <div class="barra-bg"><div class="barra-fill verde" style="width:${Math.min(Math.max(ultima.margen,0),100)}%"></div></div>
+      </div>
+    </div>
+
+    ${total4.length > 1 ? `
+    <div class="card">
+      <div class="card-title">📅 Últimas ${total4.length} semanas</div>
+      <div class="metricas" style="margin-bottom:0;">
+        <div class="metrica">
+          <div class="metrica-label">Ventas promedio</div>
+          <div class="metrica-valor" style="font-size:18px;">${fmt(promedioVentas)}</div>
+        </div>
+        <div class="metrica">
+          <div class="metrica-label">Ganancia promedio</div>
+          <div class="metrica-valor ${promedioGanancia >= 0 ? 'verde' : 'rojo'}" style="font-size:18px;">${fmt(promedioGanancia)}</div>
+        </div>
+      </div>
+      <div class="mini-chart" style="margin-top:12px;">${miniBarras}</div>
+    </div>` : ''}
+
+    ${ultima.notas ? `<div class="card"><div class="card-title">📝 Nota de la semana</div><p style="font-size:14px;color:var(--gris-texto);line-height:1.5;">${ultima.notas}</p></div>` : ''}
+  `;
+}
+
+// ── HISTORIAL ─────────────────────────────────────────────
+function renderHistorial() {
+  document.getElementById('historial-loading').style.display = 'none';
+  if (!semanas.length) {
+    document.getElementById('historial-vacio').style.display = 'block';
+    document.getElementById('historial-contenido').style.display = 'none';
+    return;
+  }
+  document.getElementById('historial-vacio').style.display = 'none';
+  document.getElementById('historial-contenido').style.display = 'block';
+
+  const totalVentas = semanas.reduce((a, s) => a + s.ventas, 0);
+  const totalGanancia = semanas.reduce((a, s) => a + s.ganancia, 0);
+
+  const items = semanas.map(s => `
+    <div class="semana-item" onclick="verDetalle('${s.id}')">
+      <div class="semana-info">
+        <div class="semana-fecha">${s.semana_inicio} → ${s.semana_fin}</div>
+        <div class="semana-detalle">${s.pedidos || 0} pedidos · Ventas ${fmt(s.ventas)} · Gastos ${fmt(s.totalGastos)}</div>
+      </div>
+      <div class="semana-ganancia ${s.ganancia >= 0 ? 'pos' : 'neg'}">${fmt(s.ganancia)}</div>
+    </div>
+  `).join('');
+
+  document.getElementById('historial-contenido').innerHTML = `
+    <div class="card" style="margin-bottom:12px;">
+      <div class="card-title">📊 Acumulado total (${semanas.length} semanas)</div>
+      <div class="metricas" style="margin-bottom:0;">
+        <div class="metrica">
+          <div class="metrica-label">Total ventas</div>
+          <div class="metrica-valor" style="font-size:18px;">${fmt(totalVentas)}</div>
+        </div>
+        <div class="metrica">
+          <div class="metrica-label">Total ganancia</div>
+          <div class="metrica-valor ${totalGanancia >= 0 ? 'verde' : 'rojo'}" style="font-size:18px;">${fmt(totalGanancia)}</div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">🗓️ Semanas registradas</div>
+      ${items}
+    </div>
+  `;
+}
+
+// ── MODAL DETALLE ────────────────────────────────────────
+window.verDetalle = function(id) {
+  const s = semanas.find(x => x.id === id);
+  if (!s) return;
+  document.getElementById('modal-contenido').innerHTML = `
+    <div class="modal-titulo">Semana ${s.semana_inicio} → ${s.semana_fin}</div>
+    <div class="modal-fila"><span class="modal-fila-label">Ventas totales</span><span class="modal-fila-valor">${fmt(s.ventas)}</span></div>
+    <div class="modal-fila"><span class="modal-fila-label">Depósitos</span><span class="modal-fila-valor">${fmt(s.depositos)}</span></div>
+    <div class="modal-fila"><span class="modal-fila-label">Pedidos</span><span class="modal-fila-valor">${s.pedidos || 0}</span></div>
+    <div style="margin:12px 0 6px; font-size:12px; font-weight:600; color:var(--gris-texto); text-transform:uppercase; letter-spacing:0.5px;">Ingredientes</div>
+    <div class="modal-fila"><span class="modal-fila-label">Queso</span><span class="modal-fila-valor">${fmt(s.insumos?.queso)}</span></div>
+    <div class="modal-fila"><span class="modal-fila-label">Carne</span><span class="modal-fila-valor">${fmt(s.insumos?.carne)}</span></div>
+    <div class="modal-fila"><span class="modal-fila-label">Pollo</span><span class="modal-fila-valor">${fmt(s.insumos?.pollo)}</span></div>
+    <div class="modal-fila"><span class="modal-fila-label">Harinas</span><span class="modal-fila-valor">${fmt(s.insumos?.harinas)}</span></div>
+    <div class="modal-fila"><span class="modal-fila-label">Verduras</span><span class="modal-fila-valor">${fmt(s.insumos?.verduras)}</span></div>
+    <div class="modal-fila"><span class="modal-fila-label">Mantequilla</span><span class="modal-fila-valor">${fmt(s.insumos?.mantequilla)}</span></div>
+    <div class="modal-fila"><span class="modal-fila-label">Mayonesa</span><span class="modal-fila-valor">${fmt(s.insumos?.mayonesa)}</span></div>
+    <div class="modal-fila"><span class="modal-fila-label"><strong>Total ingredientes</strong></span><span class="modal-fila-valor ambar"><strong>${fmt(s.totalInsumos)}</strong></span></div>
+    <div style="margin:12px 0 6px; font-size:12px; font-weight:600; color:var(--gris-texto); text-transform:uppercase; letter-spacing:0.5px;">Gastos fijos</div>
+    <div class="modal-fila"><span class="modal-fila-label">Renta</span><span class="modal-fila-valor">${fmt(s.fijos?.renta)}</span></div>
+    <div class="modal-fila"><span class="modal-fila-label">Seguro</span><span class="modal-fila-valor">${fmt(s.fijos?.seguro)}</span></div>
+    <div class="modal-fila"><span class="modal-fila-label">Basura</span><span class="modal-fila-valor">${fmt(s.fijos?.basura)}</span></div>
+    <div class="modal-fila"><span class="modal-fila-label">Gas</span><span class="modal-fila-valor">${fmt(s.fijos?.gas)}</span></div>
+    <div class="modal-fila"><span class="modal-fila-label">Luz</span><span class="modal-fila-valor">${fmt(s.fijos?.luz)}</span></div>
+    <div class="modal-fila"><span class="modal-fila-label">Contador</span><span class="modal-fila-valor">${fmt(s.fijos?.contador)}</span></div>
+    <div class="modal-fila"><span class="modal-fila-label">Empleada</span><span class="modal-fila-valor">${fmt(s.fijos?.empleada)}</span></div>
+    <div class="modal-fila"><span class="modal-fila-label">José + Ari</span><span class="modal-fila-valor">${fmt(s.fijos?.duenos)}</span></div>
+    <div class="modal-fila"><span class="modal-fila-label"><strong>Total gastos</strong></span><span class="modal-fila-valor"><strong>${fmt(s.totalGastos)}</strong></span></div>
+    <div style="margin:12px 0 6px; border-top:1px solid var(--gris-borde); padding-top:12px;">
+      <div class="modal-fila"><span class="modal-fila-label" style="font-size:16px;"><strong>Ganancia neta</strong></span><span class="modal-fila-valor" style="font-size:18px; color:${s.ganancia>=0?'var(--verde)':'var(--rojo)'}"><strong>${fmt(s.ganancia)}</strong></span></div>
+      <div class="modal-fila"><span class="modal-fila-label">Margen</span><span class="modal-fila-valor">${s.margen}%</span></div>
+    </div>
+    ${s.notas ? `<div style="background:var(--gris-fondo);border-radius:8px;padding:10px;margin-top:8px;font-size:13px;color:var(--gris-texto);">📝 ${s.notas}</div>` : ''}
+    <button class="btn-danger" onclick="eliminarSemana('${s.id}')">🗑️ Eliminar esta semana</button>
+  `;
+  document.getElementById('modal-overlay').classList.add('visible');
+};
+
+window.cerrarModal = function(e) {
+  if (e.target === document.getElementById('modal-overlay')) {
+    document.getElementById('modal-overlay').classList.remove('visible');
+  }
+};
+
+window.eliminarSemana = async function(id) {
+  if (!confirm('¿Eliminar esta semana? Esta acción no se puede deshacer.')) return;
+  try {
+    await deleteDoc(doc(db, 'semanas', id));
+    document.getElementById('modal-overlay').classList.remove('visible');
+    await cargarSemanas();
+    alert('Semana eliminada.');
+  } catch(e) { alert('Error: ' + e.message); }
+};
+
+// ── NAVEGACIÓN ───────────────────────────────────────────
+window.irA = function(sec) {
+  document.querySelectorAll('.seccion').forEach(s => s.classList.remove('activa'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('sec-' + sec).classList.add('activa');
+  document.getElementById('nav-' + sec).classList.add('active');
+  document.getElementById('total-sticky').style.display = sec === 'registro' ? 'flex' : 'none';
+};
+
+// ── INIT ─────────────────────────────────────────────────
+setFechaHoy();
+cargarConfig();
+cargarSemanas();
+</script>
+</body>
+</html>
